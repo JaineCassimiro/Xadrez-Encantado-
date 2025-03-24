@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>Untitled</title>
+  <link rel="stylesheet" href="./style.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo de Xadrez Rosa</title>
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #ffe0f0, #e0f7ff);
+      font-family: 'Poiret One', cursive;
+      text-align: center;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #333;
+      text-shadow: 0 0 5px #ff66b2;
+    }
+
+    .players {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 1rem;
+    }
+
+    .player {
+      background-color: #fff9fb;
+      border: 2px dashed #ff66b2;
+      padding: 10px;
+      border-radius: 8px;
+      width: 40%;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      border: 4px solid #ff66b2;
+      margin: 2rem auto;
+    }
+
+    .cell {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      user-select: none;
+    }
+
+    .white {
+      background-color: #fff;
+    }
+
+    .black {
+      background-color: #ffb6c1;
+    }
+
+    .piece {
+      cursor: pointer;
+    }
+
+    .selected {
+      outline: 2px dashed #333;
+    }
+
+    .rules {
+      max-width: 600px;
+      margin: 2rem auto;
+      text-align: left;
+      background: #ffffffdd;
+      padding: 1rem;
+      border-radius: 12px;
+      box-shadow: 0 0 8px #ff66b2;
+    }
+
+    .scoreboard {
+      margin: 2rem auto;
+      max-width: 400px;
+      background: #fff0fa;
+      border-radius: 12px;
+      padding: 1rem;
+      box-shadow: 0 0 6px #ccc;
+    }
+
+    .scoreboard h3 {
+      margin-bottom: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>♛ Xadrez Encantado</h1>
+
+  <div class="players">
+    <div class="player">
+      <h3>Jogadora 1: Senhorita Jaine</h3>
+      <p>Peças brancas</p>
+      <p>Ranking: 1800</p>
+    </div>
+    <div class="player">
+      <h3>Jogador 2: Oponente Misterioso</h3>
+      <p>Peças pretas</p>
+      <p>Ranking: 1750</p>
+    </div>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <button onclick="toggleInfo()" style="margin-top: 1rem; padding: 10px 20px; font-weight: bold; background: #ffccde; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 0 6px #ff66b2;">Mostrar/Ocultar Instruções</button>
+<div id="info-box">
+<div class="description"><div class="scoreboard">
+    <h3>📊 Placar de Peças Capturadas</h3>
+    <p>Brancas capturadas: <span id="white-score">0</span></p>
+    <p>Pretas capturadas: <span id="black-score">0</span></p>
+  </div>
+</div>
+<script>
+  function toggleInfo() {
+    const box = document.getElementById('info-box');
+    box.style.display = box.style.display === 'none' ? 'block' : 'none';
+  }
+  document.getElementById('info-box').style.display = 'block';
+</script>
+<div class="rules">
+    <h3>📜 Regras do Jogo</h3>
+    <ul>
+      <li>Movimente as peças clicando nelas e depois no destino.</li>
+      <li>Peças podem capturar outras se estiverem em casas opostas.</li>
+      <li>O placar será atualizado automaticamente ao capturar.</li>
+      <li>Futuras versões incluirão movimentos válidos por peça.</li>
+    </ul>
+  </div>
+
+  <script>
+    const board = document.getElementById('board');
+    const whiteScore = document.getElementById('white-score');
+    const blackScore = document.getElementById('black-score');
+
+    let whiteCaptured = 0;
+    let blackCaptured = 0;
+    let selected = null;
+
+    const pieces = {
+      0: ['♜', '♞', '♝', '♛', '♚', '♝', '♞', '♜'],
+      1: Array(8).fill('♟'),
+      6: Array(8).fill('♙'),
+      7: ['♖', '♘', '♗', '♕', '♔', '♗', '♘', '♖']
+    };
+
+    function createCell(row, col) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      const isWhite = (row + col) % 2 === 0;
+      cell.classList.add(isWhite ? 'white' : 'black');
+      cell.dataset.row = row;
+      cell.dataset.col = col;
+
+      if (pieces[row] && pieces[row][col]) {
+        const piece = document.createElement('span');
+        piece.textContent = pieces[row][col];
+        piece.classList.add('piece');
+        cell.appendChild(piece);
+      }
+
+      cell.addEventListener('click', () => handleClick(cell));
+      return cell;
+    }
+
+    function handleClick(cell) {
+      if (selected) {
+        if (cell !== selected) {
+          const movingPiece = selected.querySelector('.piece');
+          if (movingPiece) {
+            const targetPiece = cell.querySelector('.piece');
+            if (targetPiece) {
+              const isWhiteTarget = ['♙', '♖', '♘', '♗', '♕', '♔'].includes(targetPiece.textContent);
+              const isWhiteMover = ['♙', '♖', '♘', '♗', '♕', '♔'].includes(movingPiece.textContent);
+              if (isWhiteTarget !== isWhiteMover) {
+                cell.innerHTML = '';
+                cell.appendChild(movingPiece);
+                selected.innerHTML = '';
+                if (isWhiteTarget) whiteCaptured++;
+                else blackCaptured++;
+                whiteScore.textContent = whiteCaptured;
+                blackScore.textContent = blackCaptured;
+              }
+            } else {
+              cell.appendChild(movingPiece);
+              selected.innerHTML = '';
+            }
+            selected.classList.remove('selected');
+            selected = null;
+          }
+        } else {
+          selected.classList.remove('selected');
+          selected = null;
+        }
+      } else if (cell.querySelector('.piece')) {
+        selected = cell;
+        cell.classList.add('selected');
+      }
+    }
+
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 8; col++) {
+        board.appendChild(createCell(row, col));
+      }
+    }
+  </script>
+</body>
+</html>
+</script>
+<footer style="margin-top: 3rem; font-size: 0.9rem; color: #777;">
+  <p>Desenvolvido com ❤️ por <strong>Dev Jaine Silva</strong></p>
+</footer>
+</body>
+</html>
+<script src="script.js"></script>
+<!-- partial -->
+  <script  src="./script.js"></script>
+
+</body>
+</html>
